@@ -2,8 +2,7 @@
 
 int main()
 {
-    ThreadPool pool;
+    ThreadPool pool(6);
 
-    pool.tasks;
     return 0;
 }

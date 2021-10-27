@@ -5,18 +5,20 @@
 #include <queue> 
 
 template<typename T>
-class Safe_Queue {
+class SafeQueue {
 private:
     std::queue<T> queue_;
 
     std::mutex mutex_;
 
 public:
-    Safe_Queue() = default;
+    SafeQueue() = default;
 
-    ~Safe_Queue() = default;
+    ~SafeQueue() = default;
 
     bool empty();
+
+    bool check_empty();
 
     int size();
 
@@ -26,23 +28,40 @@ public:
 };
 
 template<typename T>
-bool Safe_Queue<T>::empty() {
-
+bool SafeQueue<T>::empty() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return check_empty();
 }
 
 template<typename T>
-int Safe_Queue<T>::size() {
-
+bool SafeQueue<T>::check_empty() {
+    return queue_.empty();
 }
 
 template<typename T>
-void Safe_Queue<T>::enqueue(T& t) {
-
+int SafeQueue<T>::size() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return queue_.size();
 }
 
 template<typename T>
-bool Safe_Queue<T>::dequeue(T& t) {
+void SafeQueue<T>::enqueue(T& t) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    queue_.push(t);
+}
+
+template<typename T>
+bool SafeQueue<T>::dequeue(T& t) {
+    std::lock_guard<std::mutex> lock(mutex_);
     
+    if (queue_.empty()) {
+        return false;
+    }
+
+    t = std::move(queue_.front());
+
+    queue_.pop();
+    return true;
 }
 
 #endif
