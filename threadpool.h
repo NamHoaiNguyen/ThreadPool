@@ -13,64 +13,91 @@
 #include "safe_queue.h"
 
 class ThreadPool {
-private:
-    std::vector<std::thread> workers_; 
+    private:
+        SafeQueue<std::function<void()>> task_;
 
-    // template<typename T, typename... Args>
-    // using tasks_ = SafeQueue<std::function<T(Args... args)>>;
+        std::vector<std::thread> worker_process_;
 
-    SafeQueue<std::function<void()>> tasks_;
+        std::condition_variable cv_;
 
-    std::mutex mutex_;
+        std::mutex mutex_;
 
-    std::condition_variable condition_;
+        std::size_t num_threads_;
 
-    bool shutdown_;
+        bool shutdown_;
 
-public:
-    explicit ThreadPool(std::size_t);
+    public:
+        ThreadPool() = delete;
+    
+        explicit ThreadPool(std::size_t num_threads) : num_threads_(num_threads), worker_process_(std::vector<std::thread>(num_threads)), shutdown_(false) {
 
-    ~ThreadPool() = default;
+        }
 
-    ThreadPool(const ThreadPool&) = delete;
+        void init();
 
-    ThreadPool& operator=(const ThreadPool&) = delete;
+        void shutdown();
 
-    ThreadPool(ThreadPool&&) = delete;
-
-    ThreadPool& operator=(ThreadPool &&) = delete;
-
-    template<typename T, typename... Args>
-    decltype(auto) enqueue(T&& t, Args&&... args);
+        template<typename F, typename... Args>
+        // decltype(auto) enqueue(T&& f, Args&&... args);
+        auto enqueue(F&& f, Args&&... args) -> std::future<typename std::invoke_result<F, Args...>::type>;
+    friend class Worker;
 };
 
-ThreadPool::ThreadPool(std::size_t n_threads) : workers_(std::vector<std::thread>(n_threads)), shutdown_(false) {
-    for (std::size_t i = 0; i < n_threads; i++) {
-        // workers_.emplace_back(
-        //     []() {
+class Worker {
+    private:
+    //    std::unique_ptr<ThreadPool> pool_;
+        ThreadPool *pool_;
 
-        //     }
-        // );
+    public:
+        explicit Worker(ThreadPool *pool) : pool_(pool) {
+
+        }
+
+        void operator()() {
+            std::function<void()> func;
+            std::unique_lock<std::mutex> lock(pool_->mutex_);
+            while (!pool_->shutdown_) {
+                if (pool_->task_.empty()) {
+                    pool_->cv_.wait(lock);
+                }
+                bool dequeued = pool_->task_.dequeue(func);
+                if (dequeued) {
+                    func();
+                }
+            }
+        }
+};
+
+void ThreadPool::init() {
+    for (auto i = 0; i < worker_process_.size(); i++) {
+        worker_process_[i] = std::thread(Worker(this));
     }
 }
 
-template<typename T, typename... Args>
-decltype(auto) ThreadPool::enqueue(T&& t, Args&&... args) {
-    using return_type = typename std::invoke_result<T(Args...)>::type;
-    auto task = std::make_shared<std::packaged_task<T(Args...)>>(
-            std::bind(std::forward<T>(t), std::forward<Args>(args)...)); 
+template<typename F, typename... Args>
+auto ThreadPool::enqueue(F&& f, Args&&... args) -> std::future<typename std::invoke_result<F, Args...>::type> {
+    // using return_type = typename std::invoke_result<T, Args...>::type;
+    std::function<decltype(f(args...))()> wrapper_task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+    // std::packaged_task<decltype(f(args...))()> package_task(wrapper_task);
+    auto ptr = std::make_shared<std::packaged_task<decltype(f(args...))()>>(wrapper_task);
+    std::function<void()> object = [ptr](){(*ptr)();};
 
-    std::future<void()> object = task->get.future();
+    task_.enqueue(object);
 
-    std::function<T(Args...)> wrapper_func = [task]() {
-        return (*task)();
-    };
+    cv_.notify_one();
 
-    tasks_.enqueue(wrapper_func);
+    return ptr->get_future();
+}
 
-    condition_.notify_one();
+void ThreadPool::shutdown() {
+    shutdown_ = true;
+    cv_.notify_all();
 
-    return object;
+    for (auto i = 0; i < worker_process_.size(); i++) {
+        if (worker_process_[i].joinable()) {
+            worker_process_[i].join();
+        }
+    }
 }
 
 #endif
