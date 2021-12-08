@@ -82,11 +82,13 @@ auto ThreadPool::enqueue(F&& f, Args&&... args) -> std::future<typename std::inv
     auto ptr = std::make_shared<std::packaged_task<decltype(f(args...))()>>(wrapper_task);
     std::function<void()> object = [ptr](){(*ptr)();};
 
+    auto res = ptr->get_future();
+
     task_.enqueue(object);
 
     cv_.notify_one();
 
-    return ptr->get_future();
+    return res;
 }
 
 void ThreadPool::shutdown() {
