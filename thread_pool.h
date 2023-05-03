@@ -1,4 +1,5 @@
-#pragma once
+#ifndef THREAD_POOL_H
+#define THREAD_POOL_H
 
 #include <functional>
 #include <future>
@@ -128,3 +129,5 @@ class ThreadPool {
 };
 
 } //namespace ThreadPool
+
+#endif // THREAD_POOL_H

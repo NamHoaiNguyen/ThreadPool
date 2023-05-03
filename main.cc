@@ -44,27 +44,27 @@ int main(int argc, char *argv[])
   // Initialize pool
   pool.init();
 
-  // Submit (partial) multiplication table
-  // for (int i = 1; i < 3; ++i) {
-  //   for (int j = 1; j < 10; ++j) {
-  //     pool.submit(multiply, i, j);
-  //   }
-  // }
+  Submit (partial) multiplication table
+  for (int i = 1; i < 3; ++i) {
+    for (int j = 1; j < 10; ++j) {
+      pool.submit(multiply, i, j);
+    }
+  }
 
-  // // Submit function with output parameter passed by ref
-  // int output_ref;
-  // auto future1 = pool.submit(multiply_output, std::ref(output_ref), 5, 6);
+  // Submit function with output parameter passed by ref
+  int output_ref;
+  auto future1 = pool.submit(multiply_output, std::ref(output_ref), 5, 6);
 
-  // // Wait for multiplication output to finish
-  // future1.get();
-  // std::cout << "Last operation result is equals to " << output_ref << std::endl;
+  // Wait for multiplication output to finish
+  future1.get();
+  std::cout << "Last operation result is equals to " << output_ref << std::endl;
 
-  // // Submit function with return parameter 
-  // auto future2 = pool.submit(multiply_return, 5, 3);
+  // Submit function with return parameter 
+  auto future2 = pool.submit(multiply_return, 5, 3);
 
-  // // Wait for multiplication output to finish
-  // int res = future2.get();
-  // std::cout << "Last operation result is equals to " << res << std::endl;
+  // Wait for multiplication output to finish
+  int res = future2.get();
+  std::cout << "Last operation result is equals to " << res << std::endl;
   
   struct Test {
     int add(int a, int b) {
