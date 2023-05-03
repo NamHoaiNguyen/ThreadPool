@@ -1,69 +1,83 @@
-#include "threadpool.h"
-
 #include <iostream>
+#include <random>
 
-int add(int a, int b) {
-    const int res = a + b;
-  std::cout << a << " + " << b << " = " << res << std::endl;
+#include "thread_pool.h"
+
+std::random_device rd;
+std::mt19937 mt(rd());
+std::uniform_int_distribution<int> dist(-1000, 1000);
+auto rnd = std::bind(dist, mt);
+
+
+void simulate_hard_computation() {
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000 + rnd()));
 }
 
-int add_output(int& out, int a, int b) {
-    out =  a + b;
-    std::cout << a << " + " << b << " = " << out << std::endl;
+// Simple function that adds multiplies two numbers and prints the result
+void multiply(const int a, const int b) {
+  simulate_hard_computation();
+  const int res = a * b;
+  std::cout << a << " * " << b << " = " << res << std::endl;
 }
 
-int main()
+// Same as before but now we have an output parameter
+void multiply_output(int & out, const int a, const int b) {
+  simulate_hard_computation();
+  out = a * b;
+  std::cout << a << " * " << b << " = " << out << std::endl;
+}
+
+// Same as before but now we have an output parameter
+int multiply_return(const int a, const int b) {
+  simulate_hard_computation();
+  const int res = a * b;
+  std::cout << a << " * " << b << " = " << res << std::endl;
+  return res;
+}
+
+
+int main(int argc, char *argv[])
 {
-    ThreadPool pool(3);
+  // Create pool with 3 threads
+  threadpool::ThreadPool pool;
 
-    pool.init();
+  // Initialize pool
+  pool.init();
 
-for (int i = 1; i < 3; ++i) {
-    for (int j = 1; j < 10; ++j) {
-      pool.enqueue(add, i, j);
+  // Submit (partial) multiplication table
+  // for (int i = 1; i < 3; ++i) {
+  //   for (int j = 1; j < 10; ++j) {
+  //     pool.submit(multiply, i, j);
+  //   }
+  // }
+
+  // // Submit function with output parameter passed by ref
+  // int output_ref;
+  // auto future1 = pool.submit(multiply_output, std::ref(output_ref), 5, 6);
+
+  // // Wait for multiplication output to finish
+  // future1.get();
+  // std::cout << "Last operation result is equals to " << output_ref << std::endl;
+
+  // // Submit function with return parameter 
+  // auto future2 = pool.submit(multiply_return, 5, 3);
+
+  // // Wait for multiplication output to finish
+  // int res = future2.get();
+  // std::cout << "Last operation result is equals to " << res << std::endl;
+  
+  struct Test {
+    int add(int a, int b) {
+      return a + b;
     }
-  }
+  };
 
+  Test test;
+  auto future3 = pool.submit(&Test::add, test, 5, 3);
+  int res3 = future3.get();
+  std::cout << "Last operation result3 is equals to " << res3 << std::endl;
 
-    int output_ref;
-    auto future1 = pool.enqueue(add_output, std::ref(output_ref), 1, 2);
+  pool.shutdown();
 
-    future1.get();
-    std::cout << "Result: " << output_ref << std::endl;
-
-    pool.shutdown();
-
-    return 0;
+  return 0;
 }
-
-// #include <functional>
-// #include <iostream>
- 
-// struct Foo {
-//     Foo(int num) : num_(num) {}
-//     void print_add(int i) const { std::cout << num_+i << '\n'; }
-//     int num_;
-// };
- 
-// void print_num(int i)
-// {
-//     std::cout << i << '\n';
-// }
- 
-// struct PrintNum {
-//     void operator()(int i) const
-//     {
-//         std::cout << i << '\n';
-//     }
-// };
- 
-// int main()
-// {
-//     // store a free function
-//     std::function<void(int)> f_display = print_num;
-//     f_display(-9);
- 
-//     // store a lambda
-//     std::function<void()> f_display_42 = []() { print_num(42); };
-//     f_display_42();
-// }

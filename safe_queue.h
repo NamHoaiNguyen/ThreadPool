@@ -1,67 +1,103 @@
-#ifndef SAFE_QUEUE_H
-#define SAFE_QUEUE_H
+#include <mutex>
+#include <queue>
+
+// namespace threadpool {
+
+// template<typename T>
+// class SafeQueue {
+//   private:
+//     std::mutex queue_mutex_;
+//     std::queue<T> queue_;
+
+//   public:
+//     SafeQueue() = default;
+
+//     ~SafeQueue() = default;
+
+//     SafeQueue(const SafeQueue&) = delete;
+//     SafeQueue& operator=(const SafeQueue&) = delete;
+
+//     SafeQueue(SafeQueue&&) = delete;
+//     SafeQueue& operator=(SafeQueue&&) = delete;
+
+//     bool empty() {
+//       std::unique_lock<std::mutex> lock(queue_mutex_);
+//       return queue_.empty();
+//     }
+
+//     int size() {
+//       std::unique_lock<std::mutex> lock(queue_mutex_);
+//       return queue_.size();
+//     }
+
+//     void enqueue(T& t) {
+//       std::unique_lock<std::mutex> lock(queue_mutex_);
+//       queue_.push(t);
+//     }
+
+//     bool dequeue(T& t) {
+//       std::unique_lock<std::mutex> lock(queue_mutex_);
+//       if (queue_.empty()) 
+//         return false;
+      
+//       T elem = std::move(queue_.front());
+//       queue_.pop();
+
+//       return true;
+//     }
+// };
+
+// } // namespace ThreadPool
+
+#pragma once
 
 #include <mutex>
-#include <queue> 
+#include <queue>
 
-template<typename T>
+// Thread safe implementation of a Queue using an std::queue
+template <typename T>
 class SafeQueue {
 private:
-    std::queue<T> queue_;
-
-    std::mutex mutex_;
-
+  std::queue<T> m_queue;
+  std::mutex m_mutex;
 public:
-    SafeQueue() = default;
+  SafeQueue() {
 
-    ~SafeQueue() = default;
+  }
 
-    bool empty();
+  SafeQueue(SafeQueue& other) {
+    //TODO:
+  }
 
-    bool check_empty();
+  ~SafeQueue() {
 
-    int size();
+  }
 
-    void enqueue(T& t);
 
-    bool dequeue(T& t);
-};
+  bool empty() {
+    std::unique_lock<std::mutex> lock(m_mutex);
+    return m_queue.empty();
+  }
+  
+  int size() {
+    std::unique_lock<std::mutex> lock(m_mutex);
+    return m_queue.size();
+  }
 
-template<typename T>
-bool SafeQueue<T>::empty() {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return check_empty();
-}
+  void enqueue(T& t) {
+    std::unique_lock<std::mutex> lock(m_mutex);
+    m_queue.push(t);
+  }
+  
+  bool dequeue(T& t) {
+    std::unique_lock<std::mutex> lock(m_mutex);
 
-template<typename T>
-bool SafeQueue<T>::check_empty() {
-    return queue_.empty();
-}
-
-template<typename T>
-int SafeQueue<T>::size() {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return queue_.size();
-}
-
-template<typename T>
-void SafeQueue<T>::enqueue(T& t) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    queue_.push(t);
-}
-
-template<typename T>
-bool SafeQueue<T>::dequeue(T& t) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    
-    if (queue_.empty()) {
-        return false;
+    if (m_queue.empty()) {
+      return false;
     }
-
-    t = std::move(queue_.front());
-
-    queue_.pop();
+    t = std::move(m_queue.front());
+    
+    m_queue.pop();
     return true;
-}
-
-#endif
+  }
+};
