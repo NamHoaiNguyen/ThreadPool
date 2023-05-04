@@ -43,7 +43,7 @@ class SafeQueue {
       if (queue_.empty()) 
         return false;
       
-      T elem = std::move(queue_.front());
+      t = std::move(queue_.front());
       queue_.pop();
 
       return true;

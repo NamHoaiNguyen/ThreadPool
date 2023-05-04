@@ -38,13 +38,15 @@ int multiply_return(const int a, const int b) {
 
 int main(int argc, char *argv[])
 {
+  using namespace std::placeholders;
+
   // Create pool with 3 threads
   threadpool::ThreadPool pool;
 
   // Initialize pool
   pool.init();
 
-  Submit (partial) multiplication table
+  // Submit (partial) multiplication table
   for (int i = 1; i < 3; ++i) {
     for (int j = 1; j < 10; ++j) {
       pool.submit(multiply, i, j);
@@ -67,15 +69,42 @@ int main(int argc, char *argv[])
   std::cout << "Last operation result is equals to " << res << std::endl;
   
   struct Test {
+    int a_;
+    int b_;
+
+    struct Nest {
+      int x_;
+      int y_;
+
+      int add(int a, int b) {
+        return a + b;
+      }
+    };
+
     int add(int a, int b) {
       return a + b;
     }
+    int uniquePtrAdd(std::unique_ptr<int> a, std::unique_ptr<int>  b) {
+      return *a + *b;
+    }
   };
 
+  //Test with class method
   Test test;
-  auto future3 = pool.submit(&Test::add, test, 5, 3);
+  Test::Nest nest;
+  auto future3 = pool.submit(&Test::Nest::add, nest, 5, 3);
   int res3 = future3.get();
-  std::cout << "Last operation result3 is equals to " << res3 << std::endl;
+  std::cout << "Last operation result is equals to " << res3 << std::endl;
+
+  // auto a = std::make_unique<int>(10);
+  // auto b = std::make_unique<int>(20);
+
+  // auto future4 = pool.submit(&Test::uniquePtrAdd, test, std::move(a), std::move(b));
+  // int res4 = future4.get();
+  // std::cout << "Last operation result is equals to " << res4 << std::endl;
+
+  // std::function<int()> functor = std::bind(&Test::uniquePtrAdd, test, std::move(a), std::move(b));
+  // test.uniquePtrAdd(std::move(a), std::move(b));
 
   pool.shutdown();
 

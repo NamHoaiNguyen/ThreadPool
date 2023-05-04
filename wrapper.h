@@ -204,7 +204,6 @@ constexpr decltype(auto) wrapper_impl(F &&f, Args &&...args) {
   //Why Error???
   // auto func = FunctorsTrait<F>::wrapper_impl(
       // std::forward<F>(f), std::forward<Args>(args)...);
-
   return func;
 }
 
@@ -217,7 +216,6 @@ constexpr decltype(auto) wrapper_impl(F &&f, T &&t, Args &&...args) {
 
   return func;
 }
-
 
 //Get return type of function, callable objects, methods.
 template<typename F>
