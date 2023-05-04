@@ -22,6 +22,34 @@ cmake ..
 make
 ```
 
+## How to use.
+Create the thread pool very simple.
+```
+//Create thread pool with 7 threads
+ThreadPool pool(7)
+
+//Then initialize pool
+pool.init()
+```
+
+To shutdown the threadpool, just call
+```
+pool.shutdown()
+```
+
+Put task into thread pool by calling
+```
+pool.submit(work).
+```
+
+Currently, threadpool supports, callable objects(lambda, functor, std::function, etc...), functions, methods.
+
+
+##Future Work
+* Implement for funtions, methods whose parameters are not copyable object.
+* Run benchmarks and improve performance.
+
+
 ## References.
 [^1]: Reactor Pattern(https://en.wikipedia.org/wiki/Reactor_pattern).
 [^2]: (https://nodejs.org/en/docs/guides/dont-block-the-event-loop).

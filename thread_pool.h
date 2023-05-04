@@ -14,12 +14,10 @@
 
 namespace threadpool {
 
-constexpr int kThreadPoolSize = 7;
-
 class ThreadPool {
   private:
     //Number of threads in thread pool.
-    int thread_pool_size_ = kThreadPoolSize;
+    int thread_pool_size_;
 
     //Whether to shutdown server or not.
     bool shutdown_;
@@ -65,8 +63,9 @@ class ThreadPool {
     };
 
   public:
-    ThreadPool()
-        : worker_thread_(std::vector<std::thread>(thread_pool_size_)),
+    ThreadPool(int num_threads)
+        : thread_pool_size_(num_threads)
+          worker_thread_(std::vector<std::thread>(thread_pool_size_)),
           shutdown_(false) {
 
     }

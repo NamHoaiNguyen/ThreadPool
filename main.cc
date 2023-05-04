@@ -35,13 +35,18 @@ int multiply_return(const int a, const int b) {
   return res;
 }
 
+template<typename F, typename... Args>
+decltype(auto) wrap(F&& f, Args&&... args) {
+  auto func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+  return func;
+}
 
 int main(int argc, char *argv[])
 {
   using namespace std::placeholders;
 
   // Create pool with 3 threads
-  threadpool::ThreadPool pool;
+  threadpool::ThreadPool pool(7);
 
   // Initialize pool
   pool.init();
@@ -84,7 +89,7 @@ int main(int argc, char *argv[])
     int add(int a, int b) {
       return a + b;
     }
-    int uniquePtrAdd(std::unique_ptr<int> a, std::unique_ptr<int>  b) {
+    int uniquePtrAdd(std::shared_ptr<int> a, std::shared_ptr<int>  b) {
       return *a + *b;
     }
   };
@@ -96,15 +101,12 @@ int main(int argc, char *argv[])
   int res3 = future3.get();
   std::cout << "Last operation result is equals to " << res3 << std::endl;
 
-  // auto a = std::make_unique<int>(10);
-  // auto b = std::make_unique<int>(20);
+  auto a = std::make_shared<int>(10);
+  auto b = std::make_shared<int>(20);
 
-  // auto future4 = pool.submit(&Test::uniquePtrAdd, test, std::move(a), std::move(b));
-  // int res4 = future4.get();
-  // std::cout << "Last operation result is equals to " << res4 << std::endl;
-
-  // std::function<int()> functor = std::bind(&Test::uniquePtrAdd, test, std::move(a), std::move(b));
-  // test.uniquePtrAdd(std::move(a), std::move(b));
+  auto future4 = pool.submit(&Test::uniquePtrAdd, test, std::move(a), std::move(b));
+  int res4 = future4.get();
+  std::cout << "Last operation result is equals to " << res4 << std::endl;
 
   pool.shutdown();
 
