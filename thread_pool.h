@@ -64,7 +64,7 @@ class ThreadPool {
 
   public:
     ThreadPool(int num_threads)
-        : thread_pool_size_(num_threads)
+        : thread_pool_size_(num_threads),
           worker_thread_(std::vector<std::thread>(thread_pool_size_)),
           shutdown_(false) {
 

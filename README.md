@@ -32,14 +32,20 @@ ThreadPool pool(7)
 pool.init()
 ```
 
+Put task into thread pool by calling
+```
+//res is a std::future.
+auto future =  pool.submit(work).
+```
+
+Getting the result is easy.
+```
+auto res = future.get();
+```
+
 To shutdown the threadpool, just call
 ```
 pool.shutdown()
-```
-
-Put task into thread pool by calling
-```
-pool.submit(work).
 ```
 
 Currently, threadpool supports, callable objects(lambda, functor, std::function, etc...), functions, methods.

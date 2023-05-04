@@ -35,10 +35,41 @@ int multiply_return(const int a, const int b) {
   return res;
 }
 
-template<typename F, typename... Args>
-decltype(auto) wrap(F&& f, Args&&... args) {
-  auto func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-  return func;
+struct NestObj {
+  int x;
+  int y;
+
+  NestObj() = default;
+
+  NestObj(int x, int y) : x(x), y(y) {
+
+  }
+};
+
+struct Obj {
+  NestObj nestObj;
+
+  Obj() {}
+
+  Obj(const Obj&) = default;
+  Obj& operator=(const Obj&) = default;
+
+  Obj(NestObj nestObj) : nestObj(nestObj) {
+
+  }
+
+  void copyObj(std::shared_ptr<NestObj> nest) {
+    nestObj.x = nest->x;
+    nestObj.y = nest->y;
+  }
+};
+
+std::shared_ptr<Obj> createTestObject() {
+    auto nestObj = std::make_shared<NestObj>(10, 20);
+    auto obj = std::make_shared<Obj>();
+    obj->copyObj(nestObj);
+
+    return obj;
 }
 
 int main(int argc, char *argv[])
@@ -107,6 +138,10 @@ int main(int argc, char *argv[])
   auto future4 = pool.submit(&Test::uniquePtrAdd, test, std::move(a), std::move(b));
   int res4 = future4.get();
   std::cout << "Last operation result is equals to " << res4 << std::endl;
+
+  auto future5 = pool.submit(createTestObject);
+  auto res5 = future5.get();
+  std::cout << "Last operation result is equals to " << res5->nestObj.x << " " << res5->nestObj.y << std::endl;
 
   pool.shutdown();
 
